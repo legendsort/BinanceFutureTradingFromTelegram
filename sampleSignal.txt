@@ -16,3 +16,23 @@ Targets(USDT):
 
 🛑 StopLoss:
 5%
+
+
+VIP Signal
+
+?Short
+Name: ICP/USDT
+Margin mode: Cross (20X)
+
+↪️Entry price(USDT):
+3.652000
+
+Targets(USDT):
+1) 3.61548
+2) 3.57896
+3) 3.54244
+4) 3.50592
+5) ?unlimited
+
+? StopLoss:
+5%
