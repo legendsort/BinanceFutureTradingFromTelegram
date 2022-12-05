@@ -26,6 +26,7 @@ TEL_CHANNEL_NAME = telegramConfig['CHANNEL_NAME']
 
 LEVEL = json.loads(tradingConfig['LEVEL'])
 MOVE_STOP = tradingConfig['MOVE_STOP'] == 'YES'
+INVEST_PERCENT = float(tradingConfig['INVEST_PERCENT'])
 
 API_KEY = binanceConfig['API_KEY']
 SECRET_KEY = binanceConfig['SECRET_KEY']
@@ -75,24 +76,32 @@ def adjustMargintype(symbol, client, type='CROSSED'):
 sampleSymbol = 'BTCUSDT'
 
 def pricecalc(symbol, limit = 0.95):
-    rawPrice = float(binanceClient.get_symbol_ticker(symbol = symbol)['price'])
+    rawPrice = float(binanceClient.futures_symbol_ticker(symbol = symbol)['price'])
     decLen = len(str(rawPrice).split('.')[1])
     price = rawPrice * limit
     return round(price, decLen)
 
 def quantityCalc(symbol, investment):
-    info = binanceClient.get_symbol_info(symbol=symbol)
-    Lotsize = float([i for i in info['filters'] if 
-        i['filterType'] == 'LOT_SIZE'][0]['minQty'])
+    info = binanceClient.futures_exchange_info() 
+    info = info['symbols']
+    step_size = 0
+    for x in range(len(info)):
+        if info[x]['symbol'] == symbol:
+            for f in info[x]['filters']:
+                if f['filterType'] == 'LOT_SIZE':
+                    step_size = float(f['stepSize'])
+                    break
     price = pricecalc(symbol)
-    print(price, Lotsize)
-    qty = round(investment/price, 2)
-    return qty
+    quantity = investment / price
+    precision = int(round(-math.log(step_size, 10), 0))
+    quantity = float(round(quantity, precision))
+    return quantity
 
 def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
     # try:
         [A, B] = name.split("/")
         ABal = getAsset(A)
+
         print("current A assest", A, ABal)
 
         BBal = getAsset(B)
@@ -170,24 +179,19 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 )
             pass
 
-
-makeOrder("Short", "ANKR/USDT", 20, 16957, [16952, 16954, 16956, 16958])
+# makeOrder("Long", "ANKR/USDT", 20, 0.02093, [0.021955, 0.02199, 0.022226, 0.022261])
 
 client = TelegramClient(TEL_PHONE, TEL_API_ID, TEL_API_HASH)
 
 client.connect()
-if not client.is_user_authorized():
-    print("Not authorized")
-    client.send_code_request(TEL_PHONE)
-    client.sign_in(TEL_PHONE, input('Enter the code: '))
-print("Connected")
 
-@client.on(events.NewMessage(chats = [TEL_CHANNEL_NAME]))
+
+@client.on(events.NewMessage(chats = ["CRYPTO GURU VIP SIGNALS"]))
 async def handler(event):
     newMessage = event.message.to_dict()['message']
     print("New signal: ", newMessage)
-    name, marginMode, entryPrice, targets, stopLoss = parseMessage(newMessage)
-    print("======>", name, marginMode, entryPrice, targets, stopLoss)
+    type, name, marginMode, entryPrice, targets, stopLoss = parseMessage(newMessage)
+    print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
     if name != False:
         makeOrder(name, marginMode, entryPrice, targets, stopLoss)
 
