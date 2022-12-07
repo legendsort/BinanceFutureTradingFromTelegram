@@ -11,6 +11,7 @@ import configparser
 import json
 import math
 from binance import Client, ThreadedWebsocketManager, ThreadedDepthCacheManager
+import asyncio
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -183,10 +184,13 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
 
 client = TelegramClient(TEL_PHONE, TEL_API_ID, TEL_API_HASH)
 
-client.connect()
 
-
-@client.on(events.NewMessage(chats = ["CRYPTO GURU VIP SIGNALS"]))
+# for dialog in client.iter_dialogs():
+#   if dialog.is_channel:
+#       print(f'{dialog.id}:{dialog.title}')
+# ans = client.get_entity(1001682398986)
+# print(ans)
+@client.on(events.NewMessage(chats = [1001682398986]))
 async def handler(event):
     newMessage = event.message.to_dict()['message']
     print("New signal: ", newMessage)
@@ -194,8 +198,7 @@ async def handler(event):
     print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
     if name != False:
         makeOrder(name, marginMode, entryPrice, targets, stopLoss)
-
-    
-
+client.connect()
 client.start()
+
 client.run_until_disconnected()
