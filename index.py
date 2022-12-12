@@ -32,7 +32,6 @@ INVEST_PERCENT = float(tradingConfig['INVEST_PERCENT'])
 API_KEY = binanceConfig['API_KEY']
 SECRET_KEY = binanceConfig['SECRET_KEY']
 
-
 def parseMessage(message):
     # message = open("sampleSignal.txt", "r+", encoding='utf8').read()
     try:
@@ -43,10 +42,10 @@ def parseMessage(message):
 
         name = messageList[3].split(": ")[1]
         marginMode = messageList[4].split(": ")[1]
-        entryPrice = messageList[7]
-        targets = [messageList[i].split(" ")[1] for i in range(10, 14)]
+        entryPrice = float(messageList[7])
+        targets = [float(messageList[i].split(" ")[1]) for i in range(10, 14)]
 
-        StopLoss = messageList[17].split("%")[0]
+        StopLoss = int(messageList[17].split("%")[0])
         return type, name, marginMode, entryPrice, targets, StopLoss
     except Exception as e:
         print("an exception has occured when parsing - {}".format(e))
@@ -59,6 +58,14 @@ try:
 except Exception as e:
     print("an exception has occured when connecting binance api - {}".format(e))
     raise e
+
+info = binanceClient.futures_exchange_info()
+    
+def getPrecision(symbol):
+   for x in info['symbols']:
+    if x['symbol'] == symbol:
+        print(x)
+        return x['pricePrecision']
 
 def getAsset(type):
     assets = binanceClient.futures_account_balance()
@@ -100,7 +107,9 @@ def quantityCalc(symbol, investment):
 
 def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
     # try:
-        [A, B] = name.split("/")
+        names = name.split("/")
+        print(names)
+        A, B = name[0], name[1]
         ABal = getAsset(A)
 
         print("current A assest", A, ABal)
@@ -113,7 +122,7 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
 
         side = Client.SIDE_BUY if type == "Long" else Client.SIDE_SELL
 
-        price = float(BBal)
+        price = float(BBal) * INVEST_PERCENT / 100.0
         quantity = quantityCalc(symbol, price)
         print(price, quantity)
 
@@ -127,28 +136,28 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 type='MARKET',
                 quantity=quantity
             )
-
+            print(marketOrder)
+            stopPrice = round(entryPrice * (100 - stopLoss) / 100.0, getPrecision(symbol))
+            print("Stop Price", stopPrice)
+            futuresStopLoss = binanceClient.futures_create_order(
+                symbol=symbol,
+                type='STOP_MARKET',
+                side='SELL',
+                stopPrice=stopPrice,
+                closePosition=True
+            )
+            print(futuresStopLoss)
             for i in range(4):
+                print(targets[i], quantity)
                 limitOrder = binanceClient.futures_create_order(
                     symbol=symbol,
                     type='LIMIT',
                     price=targets[i],
                     side='SELL',
-                    quantity = quantity / 4,
-                    timeInForce='GTC',
+                    quantity = round(quantity * LEVEL[i]/ 100.0, getPrecision(symbol)),
+                    timeInForce='GTX',
                 )
-                print(limitOrder)
-                stopPrice = entryPrice * (100 - stopLoss) / 100.0
-                print(stopPrice)
-                stopSellOrder = binanceClient.futures_create_order(
-                    symbol=symbol,
-                    type='STOP_MARKET',
-                    side='SELL',
-                    quantity = quantity / 4,
-                    timeInForce='GTC',
-                    stopPrice = stopPrice
-                )
-
+                
             pass
         else:
             # market order first
@@ -180,12 +189,16 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 )
             pass
 
-# makeOrder("Long", "ANKR/USDT", 20, 0.02093, [0.021955, 0.02199, 0.022226, 0.022261])
+# type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("AS")
+# print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
+# if name != False:
+#     makeOrder(type, name, marginMode, entryPrice, targets, stopLoss)
+
 
 client = TelegramClient(TEL_PHONE, TEL_API_ID, TEL_API_HASH)
 
 
-# for dialog in client.iter_dialogs():
+# for dialog Zin client.iter_dialogs():
 #   if dialog.is_channel:
 #       print(f'{dialog.id}:{dialog.title}')
 # ans = client.get_entity(1001682398986)

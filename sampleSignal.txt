@@ -1,17 +1,17 @@
 🚨 VIP Signal
 
 🟢Long
-Name: ANKR/USDT
+Name: BTC/USDT
 Margin mode: Cross (20X)
 
 ↪️Entry price(USDT):
-0.023520
+17026.7
 
 Targets(USDT):
-1) 0.023755
-2) 0.02399
-3) 0.024226
-4) 0.024461
+1) 17030.8
+2) 17032.1
+3) 17035.8
+4) 17400.0
 5) 🔝unlimited
 
 🛑 StopLoss:
