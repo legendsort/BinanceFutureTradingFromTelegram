@@ -109,7 +109,7 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
     # try:
         names = name.split("/")
         print(names)
-        A, B = name[0], name[1]
+        A, B = names[0], names[1]
         ABal = getAsset(A)
 
         print("current A assest", A, ABal)
@@ -161,32 +161,34 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             pass
         else:
             # market order first
-            order = binanceClient.futures_create_order(
+            marketOrder = binanceClient.futures_create_order(
                 symbol=symbol,
                 side=side,
-                type=Client.ORDER_TYPE_MARKET,
-                quantity=quantity,
+                type='MARKET',
+                quantity=quantity
             )
+            print(marketOrder)
+            stopPrice = round(entryPrice * (100 + stopLoss) / 100.0, getPrecision(symbol))
+            print("Stop Price", stopPrice)
+            futuresStopLoss = binanceClient.futures_create_order(
+                symbol=symbol,
+                type='STOP_MARKET',
+                side='BUY',
+                stopPrice=stopPrice,
+                closePosition=True
+            )
+            print(futuresStopLoss)
             for i in range(4):
+                print(targets[i], quantity)
                 limitOrder = binanceClient.futures_create_order(
                     symbol=symbol,
                     type='LIMIT',
                     price=targets[i],
                     side='BUY',
-                    quantity = quantity / 4,
-                    timeInForce='GTC',
+                    quantity = round(quantity * LEVEL[i]/ 100.0, getPrecision(symbol)),
+                    timeInForce='GTX',
                 )
-                print(limitOrder)
-                stopPrice = entryPrice * (100 + stopLoss) / 100.0
-                print(stopPrice)
-                stopBuyOrder = binanceClient.futures_create_order(
-                    symbol=symbol,
-                    type='STOP_MARKET',
-                    side='BUY',
-                    quantity = quantity / 4,
-                    timeInForce='GTC',
-                    stopPrice = stopPrice
-                )
+                
             pass
 
 # type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("AS")
@@ -205,12 +207,16 @@ client = TelegramClient(TEL_PHONE, TEL_API_ID, TEL_API_HASH)
 # print(ans)
 @client.on(events.NewMessage(chats = [1001682398986]))
 async def handler(event):
-    newMessage = event.message.to_dict()['message']
-    print("New signal: ", newMessage)
-    type, name, marginMode, entryPrice, targets, stopLoss = parseMessage(newMessage)
-    print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
-    if name != False:
-        makeOrder(name, marginMode, entryPrice, targets, stopLoss)
+    try:
+        newMessage = event.message.to_dict()['message']
+        print("New signal: ", newMessage)
+        type, name, marginMode, entryPrice, targets, stopLoss = parseMessage(newMessage)
+        print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
+        if name != False:
+            makeOrder(type, name, marginMode, entryPrice, targets, stopLoss)
+    except Exception as e:
+        print("an exception has occured when traiding - {}".format(e))
+        raise e
 client.connect()
 client.start()
 
