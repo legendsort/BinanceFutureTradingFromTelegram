@@ -31,9 +31,12 @@ INVEST_PERCENT = float(tradingConfig['INVEST_PERCENT'])
 
 API_KEY = binanceConfig['API_KEY']
 SECRET_KEY = binanceConfig['SECRET_KEY']
+TEST = binanceConfig['TEST']
 
 def parseMessage(message):
-    # message = open("sampleSignal.txt", "r+", encoding='utf8').read()
+    print(TEST)
+    if TEST == "true" and message == "":
+        message = open("sampleSignal.txt", "r+", encoding='utf8').read()
     try:
         messageList = message.split("\n")
         if not messageList[0].endswith('VIP Signal'):
@@ -191,20 +194,15 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 
             pass
 
-# type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("AS")
-# print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
-# if name != False:
-#     makeOrder(type, name, marginMode, entryPrice, targets, stopLoss)
+if TEST == "true":
+    type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("")
+    print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
+    if name != False:
+        makeOrder(type, name, marginMode, entryPrice, targets, stopLoss)
 
 
 client = TelegramClient(TEL_PHONE, TEL_API_ID, TEL_API_HASH)
 
-
-# for dialog Zin client.iter_dialogs():
-#   if dialog.is_channel:
-#       print(f'{dialog.id}:{dialog.title}')
-# ans = client.get_entity(1001682398986)
-# print(ans)
 @client.on(events.NewMessage(chats = [1001682398986]))
 async def handler(event):
     try:
