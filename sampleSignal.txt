@@ -1,17 +1,17 @@
-🚨 VIP Signal
+New signal:  🚨 VIP Signal
 
-🟢Short
-Name: BTC/USDT
+🔴Short
+Name: CELR/USDT
 Margin mode: Cross (20X)
 
 ↪️Entry price(USDT):
-17420.7
+0.01196
 
 Targets(USDT):
-1) 17418.3
-2) 17416.8
-3) 17411.5
-4) 17408.8
+1) 0.01184
+2) 0.011721
+3) 0.011601
+4) 0.011482
 5) 🔝unlimited
 
 🛑 StopLoss:

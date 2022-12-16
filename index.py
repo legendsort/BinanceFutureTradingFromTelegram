@@ -151,16 +151,17 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             )
             print(futuresStopLoss)
             for i in range(4):
-                print(targets[i], quantity)
+                q = quantityCalc(symbol, float(BBal) * INVEST_PERCENT / 100.0 * LEVEL[i] / 100)
+                target = round(targets[i], getPrecision(symbol))
+                print(target,  q)
                 limitOrder = binanceClient.futures_create_order(
                     symbol=symbol,
                     type='LIMIT',
-                    price=targets[i],
+                    price=target,
                     side='SELL',
-                    quantity = round(quantity * LEVEL[i]/ 100.0, getPrecision(symbol)),
+                    quantity = q,
                     timeInForce='GTX',
                 )
-                
             pass
         else:
             # market order first
@@ -182,13 +183,16 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             )
             print(futuresStopLoss)
             for i in range(4):
-                print(targets[i], quantity)
+                q = quantityCalc(symbol, float(BBal) * INVEST_PERCENT / 100.0 * LEVEL[i] / 100)
+
+                target = round(targets[i], getPrecision(symbol))
+                print(target, q)
                 limitOrder = binanceClient.futures_create_order(
                     symbol=symbol,
                     type='LIMIT',
-                    price=targets[i],
+                    price=target,
                     side='BUY',
-                    quantity = round(quantity * LEVEL[i]/ 100.0, getPrecision(symbol)),
+                    quantity = q,
                     timeInForce='GTX',
                 )
                 
