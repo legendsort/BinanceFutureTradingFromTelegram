@@ -63,12 +63,26 @@ except Exception as e:
     raise e
 
 info = binanceClient.futures_exchange_info()
-    
-def getPrecision(symbol):
+
+
+def getQuantityPrecision(symbol):
+    for x in info['symbols']:
+        if x['symbol'] == symbol:
+            return x['quantityPrecision']
+        pass
+
+def getPricePrecision(symbol):
    for x in info['symbols']:
     if x['symbol'] == symbol:
-        print(x)
         return x['pricePrecision']
+
+def getTargetPrecision(symbol):
+    step_size = 0
+    for x in info['symbols']:
+        if x['symbol'] == symbol:
+            step_size = x['filters'][0]['tickSize']
+    precision = int(round(-math.log(float(step_size), 10), 0))
+    return precision
 
 def getAsset(type):
     assets = binanceClient.futures_account_balance()
@@ -88,28 +102,19 @@ sampleSymbol = 'BTCUSDT'
 
 def pricecalc(symbol, limit = 0.95):
     rawPrice = float(binanceClient.futures_symbol_ticker(symbol = symbol)['price'])
+    # return rawPrice
     decLen = len(str(rawPrice).split('.')[1])
     price = rawPrice * limit
     return round(price, decLen)
 
 def quantityCalc(symbol, investment):
-    info = binanceClient.futures_exchange_info() 
-    info = info['symbols']
-    step_size = 0
-    for x in range(len(info)):
-        if info[x]['symbol'] == symbol:
-            for f in info[x]['filters']:
-                if f['filterType'] == 'LOT_SIZE':
-                    step_size = float(f['stepSize'])
-                    break
     price = pricecalc(symbol)
     quantity = investment / price
-    precision = int(round(-math.log(step_size, 10), 0))
-    quantity = float(round(quantity, precision))
-    return quantity
+    return float(round(quantity, getQuantityPrecision(symbol)))
 
 def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
     # try:
+
         names = name.split("/")
         print(names)
         A, B = names[0], names[1]
@@ -121,8 +126,10 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
         print("current B assest", B, BBal)
 
         symbol = '' + A + B
-        print("symbol -> ", symbol)
-
+        # print("symbol -> ", symbol)
+        # for x in info['symbols']:
+        #     if x['symbol'] == symbol:
+        #         print(x)
         side = Client.SIDE_BUY if type == "Long" else Client.SIDE_SELL
 
         price = float(BBal) * INVEST_PERCENT / 100.0
@@ -139,8 +146,8 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 type='MARKET',
                 quantity=quantity
             )
-            print(marketOrder)
-            stopPrice = round(entryPrice * (100 - stopLoss) / 100.0, getPrecision(symbol))
+            print("===========>",marketOrder)
+            stopPrice = round(entryPrice * (100 - stopLoss) / 100.0, getPricePrecision(symbol))
             print("Stop Price", stopPrice)
             futuresStopLoss = binanceClient.futures_create_order(
                 symbol=symbol,
@@ -152,16 +159,20 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             print(futuresStopLoss)
             for i in range(4):
                 q = quantityCalc(symbol, float(BBal) * INVEST_PERCENT / 100.0 * LEVEL[i] / 100)
-                target = round(targets[i], getPrecision(symbol))
+                target = round(targets[i], getTargetPrecision(symbol))
                 print(target,  q)
-                limitOrder = binanceClient.futures_create_order(
-                    symbol=symbol,
-                    type='LIMIT',
-                    price=target,
-                    side='SELL',
-                    quantity = q,
-                    timeInForce='GTX',
-                )
+                try:
+                    limitOrder = binanceClient.futures_create_order(
+                        symbol=symbol,
+                        type='LIMIT',
+                        price=target,
+                        side='SELL',
+                        quantity = q,
+                        timeInForce='GTX',
+                    )
+                except Exception as e:
+                    print("Limit order")
+
             pass
         else:
             # market order first
@@ -171,8 +182,52 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 type='MARKET',
                 quantity=quantity
             )
-            print(marketOrder)
-            stopPrice = round(entryPrice * (100 + stopLoss) / 100.0, getPrecision(symbol))
+            print("===========>",marketOrder)
+
+            # stopPrice = round(entryPrice * (100 + stopLoss) / 100.0, getPricePrecision(symbol))
+            # print("Stop Price", stopPrice)
+            # futuresStopLoss = binanceClient.futures_create_order(
+            #     symbol=symbol,
+            #     type='STOP_MARKET',
+            #     side='BUY',
+            #     stopPrice=stopPrice,
+            #     closePosition=True
+            # )
+            # print(futuresStopLoss)
+            
+            # for i in range(4):
+            #     stopPrice = round(entryPrice * (100 + stopLoss) / 100.0, getPricePrecision(symbol))
+            #     print("Stop Price", stopPrice)
+            #     target = round(targets[i], getTargetPrecision(symbol))
+            #     if i > 0:
+            #         stopPrice = round(targets[i-1], getPricePrecision(symbol))
+            #     else :
+            #         stopPrice = round(entryPrice, getPricePrecision(symbol))
+
+
+            #     tp_order = binanceClient.futures_create_order(symbol=symbol,
+            #         side='BUY',
+            #         type ='TAKE_PROFIT_MARKET',
+            #         timeInForce='GTE_GTC',
+            #         quantity = quantity,
+            #         stopPrice=target,
+            #         workingType='MARK_PRICE'
+            #     )
+
+            #     print(tp_order)
+            #     sl_order = binanceClient.futures_create_order(symbol=symbol,
+            #         side='BUY',
+            #         type ='STOP_MARKET',
+            #         timeInForce='GTE_GTC',
+            #         quantity = quantity,
+            #         stopPrice=stopPrice,
+            #         workingType='MARK_PRICE'
+            #     )
+            #     print(sl_order)
+
+
+
+            stopPrice = round(entryPrice * (100 + stopLoss) / 100.0, getPricePrecision(symbol))
             print("Stop Price", stopPrice)
             futuresStopLoss = binanceClient.futures_create_order(
                 symbol=symbol,
@@ -185,19 +240,23 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             for i in range(4):
                 q = quantityCalc(symbol, float(BBal) * INVEST_PERCENT / 100.0 * LEVEL[i] / 100)
 
-                target = round(targets[i], getPrecision(symbol))
+                target = round(targets[i], getTargetPrecision(symbol))
                 print(target, q)
-                limitOrder = binanceClient.futures_create_order(
-                    symbol=symbol,
-                    type='LIMIT',
-                    price=target,
-                    side='BUY',
-                    quantity = q,
-                    timeInForce='GTX',
-                )
+                try:
+                    limitOrder = binanceClient.futures_create_order(
+                        symbol=symbol,
+                        type='LIMIT',
+                        price=target,
+                        side='BUY',
+                        quantity = q,
+                        timeInForce='GTX',
+                    )
+                    print(limitOrder)
+                except Exception as e:
+                    print("Limit order")
                 
             pass
-
+        
 if TEST == "true":
     type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("")
     print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
