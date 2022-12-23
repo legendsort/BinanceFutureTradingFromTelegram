@@ -9,9 +9,9 @@ Margin mode: Cross (20X)
 
 Targets(USDT):
 1) 16847.8
-2) 16830.8
-3) 16820.8
-4) 16810.8
+2) 16845.8
+3) 16843.8
+4) 16842.8
 5) 🔝unlimited
 
 🛑 StopLoss:
