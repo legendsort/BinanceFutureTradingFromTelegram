@@ -1,17 +1,17 @@
-New signal: 🚨 VIP Signal
+New signal:  🚨 VIP Signal
 
 🔴Short
 Name: BTC/USDT
 Margin mode: Cross (20X)
 
 ↪️Entry price(USDT):
-16851.8
+16806.8
 
 Targets(USDT):
-1) 16847.8
-2) 16845.8
-3) 16843.8
-4) 16842.8
+1) 16805.8
+2) 16804.8
+3) 16803.8
+4) 16760.8
 5) 🔝unlimited
 
 🛑 StopLoss:

@@ -56,7 +56,7 @@ def parseMessage(message):
 
 
 try:
-    binanceClient = Client(API_KEY, SECRET_KEY, testnet=True)
+    binanceClient = Client(API_KEY, SECRET_KEY)
     binanceClient.ping()
 except Exception as e:
     print("an exception has occured when connecting binance api - {}".format(e))
@@ -178,20 +178,30 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 except Exception as e:
                     print("Limit order")
             if MOVE_STOP == True:
-                pre = 5
-                while True:
+                rawPrice = float(binanceClient.futures_symbol_ticker(symbol = symbol)['price'])
+                c = 0
+                while c < 4:
                     orders = binanceClient.futures_get_open_orders(symbol=symbol)
                     now = len(orders)
                     if now < 2:
                         break
-                    if pre != now:
-                        print("----->", now)
-                        binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
-                        if now == 4:
-                            stopPrice = round(entryPrice, getPricePrecision(symbol))
-                        else:
-                            stopPrice = round(targets[3 - now], getPricePrecision(symbol))
+                    prec = c
+                    while c < 4 and rawPrice >= targets[c]:
+                        c = c + 1
                         
+                    if c == prec:
+                        continue
+                    
+                    try:
+                        binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
+                    except:
+                        print("cancel order")
+                    if c == 1:
+                        stopPrice = round(entryPrice, getPricePrecision(symbol))
+                    else:
+                        stopPrice = round(targets[c - 2], getPricePrecision(symbol))
+                    
+                    try:
                         print("Stop Price changed to ", stopPrice)
                         futuresStopLoss = binanceClient.futures_create_order(
                             symbol=symbol,
@@ -201,10 +211,13 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                             closePosition=True
                         )
                         stopId = futuresStopLoss['orderId']
-                        pre = now
+                    except:
+                        print("cancel order")
+                try:
+                    binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
+                except:
+                    print("cancel order")    
                 pass
-                binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
-            pass
         else:
             # market order first
             marketOrder = binanceClient.futures_create_order(
@@ -248,20 +261,30 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                 except Exception as e:
                     print("Limit order")
             if MOVE_STOP == True:
-                pre = 5
-                while True:
+                rawPrice = float(binanceClient.futures_symbol_ticker(symbol = symbol)['price'])
+                c = 0
+                while c < 4:
                     orders = binanceClient.futures_get_open_orders(symbol=symbol)
                     now = len(orders)
                     if now < 2:
                         break
-                    if pre != now:
-                        print("----->", now)
-                        binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
-                        if now == 4:
-                            stopPrice = round(entryPrice, getPricePrecision(symbol))
-                        else:
-                            stopPrice = round(targets[3 - now], getPricePrecision(symbol))
+                    prec = c
+                    while c < 4 and rawPrice <= targets[c]:
+                        c = c + 1
                         
+                    if c == prec:
+                        continue
+
+                    try:
+                        binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
+                    except:
+                        print("cancel order")
+                    if c == 1:
+                        stopPrice = round(entryPrice, getPricePrecision(symbol))
+                    else:
+                        stopPrice = round(targets[c - 2], getPricePrecision(symbol))
+                    
+                    try:
                         print("Stop Price changed to ", stopPrice)
                         futuresStopLoss = binanceClient.futures_create_order(
                             symbol=symbol,
@@ -271,8 +294,12 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
                             closePosition=True
                         )
                         stopId = futuresStopLoss['orderId']
-                        pre = now
-                binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)    
+                    except:
+                        print("cancel order")
+                try:
+                    binanceClient.futures_cancel_order(symbol=symbol, orderId = stopId)
+                except:
+                    print("cancel order")    
                 pass
         
 
