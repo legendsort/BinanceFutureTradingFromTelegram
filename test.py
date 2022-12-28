@@ -32,11 +32,10 @@ INVEST_PERCENT = float(tradingConfig['INVEST_PERCENT'])
 API_KEY = binanceConfig['API_KEY']
 SECRET_KEY = binanceConfig['SECRET_KEY']
 TEST = binanceConfig['TEST']
-FILE = binanceConfig['FILE']
 
 def parseMessage(message):
     print(TEST)
-    if FILE=="true":
+    if TEST == "true" and message == "":
         message = open("sampleSignal.txt", "r+", encoding='utf8').read()
     try:
         messageList = message.split("\n")
@@ -305,7 +304,7 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
         
 
         
-if FILE == "true":
+if TEST == "true":
     type, name, marginMode, entryPrice, targets, stopLoss = parseMessage("")
     print("======>", type, name, marginMode, entryPrice, targets, stopLoss)
     if name != False:
