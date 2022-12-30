@@ -55,10 +55,10 @@ def parseMessage(message):
         print("an exception has occured when parsing - {}".format(e))
         return False, False, False, False, False, False
 
-
 try:
-    binanceClient = Client(API_KEY, SECRET_KEY, testnet=TEST)
+    binanceClient = Client(API_KEY, SECRET_KEY, testnet=(TEST == 'true'))
     binanceClient.ping()
+    print(binanceClient.futures_get_position_mode())
 except Exception as e:
     print("an exception has occured when connecting binance api - {}".format(e))
     raise e
@@ -125,7 +125,6 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
 
         BBal = getAsset(B)
         print("current B assest", B, BBal)
-
         symbol = '' + A + B
         # print("symbol -> ", symbol)
         # for x in info['symbols']:
@@ -223,7 +222,7 @@ def makeOrder(type, name, marginMode, entryPrice, targets, stopLoss=5):
             # market order first
             marketOrder = binanceClient.futures_create_order(
                 symbol=symbol,
-                side=side,
+                side='SELL',
                 type='MARKET',
                 quantity=quantity
             )
